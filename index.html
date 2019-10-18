@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        #map {
+            height: 100%;
+        }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #map div {
+          background-position: 50% !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="data.js"></script>
+    <script src="map_style.js"></script>
+    <script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAYDUpOrY3d7ZrCBfp25Wl0y7pK2GJaiO4&libraries=visualization&callback=initMap" async defer></script>
+    <script>
+    var map;
+    function initMap() {
+        
+        map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 8,
+            center: { lat: 23.68130861845084, lng: 120.64228160716105 },
+            styles: map_style
+        });
+
+        var markers = locations.map(function(location, i) {
+            return new google.maps.Marker({
+                position: location,
+                icon: {
+                    url: 'img/paw-icon.png',
+                    size: new google.maps.Size(30, 30),
+                },
+            });
+        });
+
+        new MarkerClusterer(map, markers, {
+            imagePath: 'img/m',
+            maxZoom: 13
+        });
+
+        map.data.loadGeoJson('twCounty2010.geo.json');
+        map.data.setStyle({
+            fillColor: '#6b7c88',
+            strokeWeight: 1,
+            strokeColor: '#00263c'
+        });
+        map.data.addListener('mouseover', function(event) {
+            map.data.overrideStyle(event.feature, {fillColor: '#aab7be'});
+        });
+            map.data.addListener('mouseout', function(event) {
+            map.data.overrideStyle(event.feature, {fillColor: '#6b7c88'});
+        });
+        map.data.addListener('click', function(event) {
+            var bounds = new google.maps.LatLngBounds();
+            processPoints(event.feature.getGeometry(), bounds.extend, bounds);
+            map.fitBounds(bounds);
+            // google.maps.event.addListenerOnce(map, 'idle', function() {
+            //     map.data.setStyle({visible: false});
+            // });
+        });
+      
+        google.maps.event.addListener(map, 'zoom_changed', function() {
+            zoomLevel = map.getZoom();
+            if (zoomLevel > 10) {
+                map.data.setStyle({
+                    visible: false
+                });
+            } else {
+                map.data.setStyle({
+                    visible: true,
+                    fillColor: '#6b7c88',
+                    strokeWeight: 1,
+                    strokeColor: '#00263c'
+                });
+            }
+        });
+    }
+
+    function processPoints(geometry, callback, thisArg) {
+        if (geometry instanceof google.maps.LatLng) {
+            callback.call(thisArg, geometry);
+        } else if (geometry instanceof google.maps.Data.Point) {
+            callback.call(thisArg, geometry.get());
+        } else {
+            geometry.getArray().forEach(function(g) {
+                processPoints(g, callback, thisArg);
+            });
+        }
+    }
+    </script>
+</body>
+</html>
